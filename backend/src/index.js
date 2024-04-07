@@ -2,122 +2,68 @@ const restify = require('restify')
 
 // iniciar o servidor
 var server = restify.createServer({
-  name: 'pratica-2'
+  name: 'pratica-3'
 })
 
-// definir o nome padrão
-const defaultName = 'Pietro de Souza - GEC1598'
+// Array para armazenar os professores
+let professores = []
 
-// configurar o servidor para aceitar JSON e query
+// Middleware para permitir o parsing do corpo da requisição
 server.use(restify.plugins.bodyParser())
-server.use(restify.plugins.queryParser())
 
-// rota configurada para a função helloWorld
-server.get('/api/v1/hello', function (req, res) {
-  let name = defaultName
-  res.setHeader('Content-Type', 'application/json')
-  res.charSet('UTF-8')
-  res.send('Hello ' + name)
-})
+// Endpoint para inserir um novo professor
+server.post('/api/v1/professor/inserir', (req, res, next) => {
+  const { nome, diciplina, email } = req.body
 
-// rota para verificar params no path
-server.get('/api/v1/params/:name', function (req, res, next) {
-  let name = req.params.name
-  res.setHeader('Content-Type', 'application/json')
-  res.charSet('UTF-8')
-  res.send('Parametro passado na rota: ' + name)
-  next()
-})
-
-// rota para verificar query params
-server.get('/api/v1/query', function (req, res) {
-  let name = req.query.name
-  res.setHeader('Content-Type', 'application/json')
-  res.charSet('UTF-8')
-  res.send('Query passado na requisição: ' + name)
-})
-
-// Testando o POST na home
-server.post('/', function (req, res) {
-  //verificando se há body passado na requisição
-  let name = defaultName
-  if (req.body) {
-    name = req.body.name
+  // Simulação de inserção no banco de dados
+  const novoProfessor = {
+    id: professores.length + 1, // Simulação de um ID único
+    nome,
+    diciplina,
+    email
   }
-  // Definir o cabeçalho de resposta como HTML
-  res.setHeader('Content-Type', 'text/html')
-  // Corpo da resposta - uma página HTML básica
-  const html = `
-        <!DOCTYPE html>
-        <html lang="en">
-        <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>HomePage Post Test</title>
-        </head>
-        <body>
-            <h1>Obtendo o body da requisição: ${name} foi passado</h1>
-        </body>
-        </html>
-    `
-  // Enviar a resposta
-  res.write(html)
-  res.end()
+
+  professores.push(novoProfessor)
+
+  res.send(201, novoProfessor)
+  return next()
 })
 
-// rota configurada com parametros passador na rota
-server.get('/', function (req, res) {
-  //verificando se há body passado na requisição
-  let name = defaultName
-  // Definir o cabeçalho de resposta como HTML
-  res.setHeader('Content-Type', 'text/html')
-  // Corpo da resposta - uma página HTML básica
-  const html = `
-        <!DOCTYPE html>
-        <html lang="en">
-        <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Minha API com restify.js</title>
-        </head>
-        <body>
-            <h1>Página HTML de ${name}</h1>
-            <p>Esta página é apenas um exemplo</p>
-        </body>
-        </html>
-    `
-  // Enviar a resposta
-  res.write(html)
-  res.end()
+// Endpoint para listar todos os professores
+server.get('/api/v1/professor/listar', (req, res, next) => {
+  res.send(professores)
+  return next()
 })
 
-// ============================= BONUS =============================
-//iniciando repositorio
-var repositorio = []
-// rota com method POST salvar no repositorio
-server.post('/api/v1/add', function (req, res, next) {
-  repositorio.push(req.body)
-  res.setHeader('Content-Type', 'application/json')
-  res.charSet('UTF-8')
-  res.send(201, { message: 'Resource created' })
-  next()
+// Endpoint para atualizar um professor existente
+server.post('/api/v1/professor/atualizar', (req, res, next) => {
+  const { id, nome, diciplina, email } = req.body
+
+  const professorIndex = professores.findIndex(professor => professor.id === id)
+  if (professorIndex === -1) {
+    res.send(404, { message: 'Professor não encontrado' })
+  } else {
+    professores[professorIndex] = { id, nome, diciplina, email }
+    res.send(200, professores[professorIndex])
+  }
+
+  return next()
 })
-// rota com method GET buscar no repositorio
-server.get('/api/v1/list', function (req, res, next) {
-  res.setHeader('Content-Type', 'application/json')
-  res.charSet('UTF-8')
-  res.send(repositorio)
-  next()
+
+// Endpoint para excluir um professores pelo ID
+server.post('/api/v1/professor/excluir', (req, res, next) => {
+  const { id } = req.body
+
+  const professorIndex = professores.findIndex(professor => professor.id === id)
+  if (professorIndex === -1) {
+    res.send(404, { message: 'Professor não encontrado' })
+  } else {
+    professores.splice(professorIndex, 1)
+    res.send(200, { message: 'Professor excluído com sucesso' })
+  }
+
+  return next()
 })
-// rota com method DELETE deletar tudo no repositorio
-server.del('/api/v1/list', function (req, res, next) {
-  repositorio = []
-  res.setHeader('Content-Type', 'application/json')
-  res.charSet('UTF-8')
-  res.send(200, { message: 'Resource deleted' })
-  next()
-})
-// ============================= BONUS =============================
 
 // iniciar o servidor
 var port = process.env.PORT || 5000

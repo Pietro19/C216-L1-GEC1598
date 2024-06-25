@@ -5,22 +5,22 @@ const { Pool } = require('pg')
 const pool = new Pool({
   user: process.env.POSTGRES_USER || 'postgres', // Usuário do banco de dados
   host: process.env.POSTGRES_HOST || 'db', // Este é o nome do serviço do banco de dados no Docker Compose
-  database: process.env.POSTGRES_DB || 'professores',
+  database: process.env.POSTGRES_DB || 'livros',
   password: process.env.POSTGRES_PASSWORD || 'password', // Senha do banco de dados
   port: process.env.POSTGRES_PORT || 5432
 })
 
 // iniciar o servidor
 var server = restify.createServer({
-  name: 'pratica-4'
+  name: 'pratica-Final'
 })
 
 // Iniciando o banco de dados
 async function initDatabase() {
   try {
-    await pool.query('DROP TABLE IF EXISTS professores')
+    await pool.query('DROP TABLE IF EXISTS livros')
     await pool.query(
-      'CREATE TABLE IF NOT EXISTS professores (id SERIAL PRIMARY KEY, nome VARCHAR(255) NOT NULL, diciplina VARCHAR(255) NOT NULL, email VARCHAR(255) NOT NULL)'
+      'CREATE TABLE IF NOT EXISTS livros (id SERIAL PRIMARY KEY, nome VARCHAR(255) NOT NULL, autor VARCHAR(255) NOT NULL, genero VARCHAR(255) NOT NULL)'
     )
     console.log('Banco de dados inicializado com sucesso')
   } catch (error) {
@@ -34,77 +34,75 @@ async function initDatabase() {
 // Middleware para permitir o parsing do corpo da requisição
 server.use(restify.plugins.bodyParser())
 
-// Endpoint para inserir um novo professor
-server.post('/api/v1/professor/inserir', async (req, res, next) => {
-  const { nome, diciplina, email } = req.body
+// Endpoint para inserir um novo livro
+server.post('/api/v1/livro/inserir', async (req, res, next) => {
+  const { nome, autor, genero } = req.body
 
   try {
     const result = await pool.query(
-      'INSERT INTO professores (nome, diciplina, email) VALUES ($1, $2, $3) RETURNING *',
-      [nome, diciplina, email]
+      'INSERT INTO livros (nome, autor, genero) VALUES ($1, $2, $3) RETURNING *',
+      [nome, autor, genero]
     )
     res.send(201, result.rows[0])
-    console.log('professor inserido com sucesso:', result.rows[0])
+    console.log('livro inserido com sucesso:', result.rows[0])
   } catch (error) {
-    console.error('Erro ao inserir professor:', error)
-    res.send(500, { message: 'Erro ao inserir professor' })
+    console.error('Erro ao inserir livro:', error)
+    res.send(500, { message: 'Erro ao inserir livro' })
   }
   return next()
 })
 
-// Endpoint para listar todos os professores
-server.get('/api/v1/professor/listar', async (req, res, next) => {
+// Endpoint para listar todos os livros
+server.get('/api/v1/livro/listar', async (req, res, next) => {
   try {
-    const result = await pool.query('SELECT * FROM professores')
+    const result = await pool.query('SELECT * FROM livros')
     res.send(result.rows)
-    console.log('professores encontrados:', result.rows)
+    console.log('livros encontrados:', result.rows)
   } catch (error) {
-    console.error('Erro ao listar professores:', error)
-    res.send(500, { message: 'Erro ao listar professores' })
+    console.error('Erro ao listar livros:', error)
+    res.send(500, { message: 'Erro ao listar livros' })
   }
   return next()
 })
 
-// Endpoint para atualizar um professor existente
-server.post('/api/v1/professor/atualizar', async (req, res, next) => {
-  const { id, nome, diciplina, email } = req.body
+// Endpoint para atualizar um livro existente
+server.post('/api/v1/livro/atualizar', async (req, res, next) => {
+  const { id, nome, autor, genero } = req.body
 
   try {
     const result = await pool.query(
-      'UPDATE professores SET nome = $1, diciplina = $2, email = $3 WHERE id = $4 RETURNING *',
-      [nome, diciplina, email, id]
+      'UPDATE livros SET nome = $1, autor = $2, genero = $3 WHERE id = $4 RETURNING *',
+      [nome, autor, genero, id]
     )
     if (result.rowCount === 0) {
-      res.send(404, { message: 'professor não encontrado' })
+      res.send(404, { message: 'livro não encontrado' })
     } else {
       res.send(200, result.rows[0])
-      console.log('professor atualizado com sucesso:', result.rows[0])
+      console.log('livro atualizado com sucesso:', result.rows[0])
     }
   } catch (error) {
-    console.error('Erro ao atualizar professor:', error)
-    res.send(500, { message: 'Erro ao atualizar professor' })
+    console.error('Erro ao atualizar livro:', error)
+    res.send(500, { message: 'Erro ao atualizar livro' })
   }
 
   return next()
 })
 
-// Endpoint para excluir um professor pelo ID
-server.post('/api/v1/professor/excluir', async (req, res, next) => {
+// Endpoint para excluir um livro pelo ID
+server.post('/api/v1/livro/excluir', async (req, res, next) => {
   const { id } = req.body
 
   try {
-    const result = await pool.query('DELETE FROM professores WHERE id = $1', [
-      id
-    ])
+    const result = await pool.query('DELETE FROM livros WHERE id = $1', [id])
     if (result.rowCount === 0) {
-      res.send(404, { message: 'professor não encontrado' })
+      res.send(404, { message: 'livro não encontrado' })
     } else {
-      res.send(200, { message: 'professor excluído com sucesso' })
-      console.log('professor excluído com sucesso')
+      res.send(200, { message: 'livro excluído com sucesso' })
+      console.log('livro excluído com sucesso')
     }
   } catch (error) {
-    console.error('Erro ao excluir professor:', error)
-    res.send(500, { message: 'Erro ao excluir professor' })
+    console.error('Erro ao excluir livro:', error)
+    res.send(500, { message: 'Erro ao excluir livro' })
   }
 
   return next()
@@ -112,9 +110,9 @@ server.post('/api/v1/professor/excluir', async (req, res, next) => {
 // endpoint para resetar o banco de dados
 server.del('/api/v1/database/reset', async (req, res, next) => {
   try {
-    await pool.query('DROP TABLE IF EXISTS professores')
+    await pool.query('DROP TABLE IF EXISTS livros')
     await pool.query(
-      'CREATE TABLE professores (id SERIAL PRIMARY KEY, nome VARCHAR(255) NOT NULL, diciplina VARCHAR(255) NOT NULL, email VARCHAR(255) NOT NULL)'
+      'CREATE TABLE livros (id SERIAL PRIMARY KEY, nome VARCHAR(255) NOT NULL, autor VARCHAR(255) NOT NULL, genero VARCHAR(255) NOT NULL)'
     )
     res.send(200, { message: 'Banco de dados resetado com sucesso' })
     console.log('Banco de dados resetado com sucesso')
